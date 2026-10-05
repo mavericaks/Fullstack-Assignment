@@ -1,0 +1,58 @@
+{
+  "general": [
+    "apple", "banana", "car", "dog", "elephant", "fish", "guitar", "house", "ice cream", "jellyfish",
+    "kite", "lion", "moon", "notebook", "octopus", "pizza", "queen", "rainbow", "sun", "tree",
+    "umbrella", "volcano", "whale", "xylophone", "yacht", "zebra", "airplane", "bridge", "castle",
+    "anchor", "balloon", "camera", "diamond", "explosion", "fountain", "giraffe", "helicopter",
+    "arrow", "butterfly", "clock", "dinosaur", "envelope", "flag", "galaxy", "hurricane", "iris",
+    "battery", "compass", "donut", "emerald", "backpack", "cactus", "drum", "escalator", "feather",
+    "glasses", "horseshoe", "iceberg", "jewel", "king", "lollipop", "mushroom", "needle", "orbit",
+    "puzzle", "quarter", "refrigerator", "scissors", "toothbrush", "uniform", "village", "wrench", "yarn",
+    "kayak", "lantern", "meteor", "nutcracker", "ostrich", "pumpkin", "ruler", "snowflake", "treasure"
+  ],
+  "hard": [
+    "kaleidoscope", "guillotine", "observatory", "pendulum", "submarine", "trapeze", "zucchini",
+    "jacuzzi", "illusion", "hologram", "flambe", "espresso", "dominoes", "chandelier", "biscuit",
+    "avalanche", "yearbook", "xenon", "wolverine", "velocity", "uppercut", "treadmill", "stethoscope",
+    "rattlesnake", "quasar", "platypus", "origami", "nebula", "marathon", "labyrinth", "kingfisher",
+    "jackhammer", "icicle", "hummingbird", "gondola", "fossil", "eclipse", "dragonfly", "caterpillar",
+    "bonfire", "acorn", "ziggurat", "wheelchair", "ventilator", "universe", "quicksilver", "jester",
+    "zeppelin", "yoyo", "xray", "waffle", "vase", "trampoline", "satellite", "raincoat", "quicksand",
+    "palm tree", "oven", "newspaper", "microscope", "lemon", "koala", "juggler", "invitation", "harp",
+    "globe", "fireworks", "earthquake", "dolphin", "candle", "baseball", "astronaut", "zipper", "yogurt"
+  ],
+  "animals": [
+    "dog", "cat", "elephant", "lion", "tiger", "bear", "giraffe", "zebra", "monkey", "gorilla",
+    "kangaroo", "koala", "panda", "hippopotamus", "rhinoceros", "crocodile", "alligator", "snake",
+    "turtle", "frog", "toad", "lizard", "chameleon", "iguana", "penguin", "ostrich", "emu", "eagle",
+    "hawk", "falcon", "owl", "parrot", "peacock", "flamingo", "swan", "duck", "goose", "chicken",
+    "rooster", "turkey", "pig", "cow", "horse", "sheep", "goat", "donkey", "camel", "llama", "alpaca",
+    "deer", "moose", "elk", "wolf", "fox", "coyote", "raccoon", "skunk", "badger", "beaver", "otter",
+    "walrus", "seal", "dolphin", "whale", "shark", "octopus", "squid", "crab", "lobster", "shrimp",
+    "starfish", "jellyfish", "seahorse", "stingray", "manta ray", "snail", "slug", "worm", "spider",
+    "scorpion", "centipede", "millipede", "ant", "bee", "wasp", "butterfly", "moth", "beetle", "ladybug",
+    "grasshopper", "cricket", "praying mantis", "dragonfly", "fly", "mosquito", "flea", "tick"
+  ],
+  "food": [
+    "pizza", "hamburger", "cheeseburger", "hot dog", "french fries", "onion rings", "chicken nuggets",
+    "fried chicken", "steak", "pork chop", "bacon", "sausage", "ham", "turkey", "roast beef", "meatloaf",
+    "spaghetti", "macaroni and cheese", "lasagna", "ravioli", "tortellini", "ramen", "pho", "pad thai",
+    "sushi", "sashimi", "tempura", "teriyaki", "dumpling", "egg roll", "spring roll", "taco", "burrito",
+    "enchilada", "quesadilla", "nachos", "fajita", "tamale", "sandwich", "sub", "panini", "wrap",
+    "salad", "soup", "stew", "chili", "curry", "rice", "beans", "bread", "toast", "bagel", "croissant",
+    "muffin", "donut", "pastry", "cake", "cupcake", "pie", "tart", "cookie", "brownie", "ice cream",
+    "gelato", "sorbet", "frozen yogurt", "pudding", "jello", "pancake", "waffle", "french toast", "crepe",
+    "egg", "omelet", "scrambled eggs", "fried egg", "boiled egg", "poached egg", "cheese", "butter", "milk"
+  ],
+  "movies": [
+    "star wars", "darth vader", "jedi", "lightsaber", "yoda", "harry potter", "hogwarts", "voldemort",
+    "magic wand", "wizard", "lord of the rings", "the hobbit", "gandalf", "frodo", "the one ring",
+    "the matrix", "neo", "morpheus", "trinity", "red pill", "jurassic park", "t-rex", "velociraptor",
+    "indiana jones", "whip", "fedora", "the avengers", "iron man", "captain america", "thor", "hulk",
+    "black widow", "spider-man", "batman", "superman", "wonder woman", "the joker", "gotham city",
+    "james bond", "007", "martini", "aston martin", "the terminator", "cyborg", "time travel", "skynet",
+    "back to the future", "delorean", "hoverboard", "marty mcfly", "doc brown", "ghostbusters", "proton pack",
+    "stay puft", "slimers", "e.t.", "alien", "predator", "the godfather", "mafia", "scarface",
+    "rocky", "boxing gloves", "apollo creed", "jaws", "great white shark", "amity island", "titanic"
+  ]
+}

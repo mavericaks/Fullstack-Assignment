@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Multiplayer Pictionary-style drawing and guessing game — draw, guess, and compete with friends in real-time!">
+  <title>Drawly — Multiplayer Drawing Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ═══════ LOBBY SCREEN ═══════ -->
+  <div id="lobby-screen" class="screen active">
+    <div class="lobby-container">
+      <div class="logo-area">
+        <h1 class="logo">
+          <span class="logo-icon">🎨</span>
+          <span class="logo-text">Drawly</span>
+        </h1>
+        <p class="tagline">Draw, Guess & Win!</p>
+      </div>
+
+      <div class="lobby-card glass-card">
+        <!-- Tab switcher -->
+        <div class="tab-switcher">
+          <button class="tab-btn active" data-tab="create">Create Room</button>
+          <button class="tab-btn" data-tab="join">Join Room</button>
+        </div>
+
+        <!-- Create Room Tab -->
+        <div id="tab-create" class="tab-content active">
+          <div class="form-group">
+            <label for="create-name">Your Name</label>
+            <input type="text" id="create-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="setting-rounds">Rounds</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="setting-rounds" data-dir="-1">−</button>
+              <input type="number" id="setting-rounds" value="3" min="1" max="10">
+              <button class="stepper-btn" data-target="setting-rounds" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="setting-time">Draw Time (seconds)</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="setting-time" data-dir="-10">−</button>
+              <input type="number" id="setting-time" value="80" min="30" max="180" step="10">
+              <button class="stepper-btn" data-target="setting-time" data-dir="10">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="setting-category">Word Category</label>
+            <select id="setting-category" class="styled-select">
+              <option value="general">General (Mixed)</option>
+              <option value="hard">Hard (Difficult to guess)</option>
+              <option value="animals">Animals</option>
+              <option value="food">Food & Drinks</option>
+              <option value="movies">Movies & Pop Culture</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="custom-words">Custom Words <span class="optional">(optional, comma-separated)</span></label>
+            <textarea id="custom-words" placeholder="apple, car, ocean..." rows="2"></textarea>
+          </div>
+          <button id="btn-create" class="btn-primary">Create Room</button>
+        </div>
+
+        <!-- Join Room Tab -->
+        <div id="tab-join" class="tab-content">
+          <div class="form-group">
+            <label for="join-name">Your Name</label>
+            <input type="text" id="join-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="join-code">Room Code</label>
+            <input type="text" id="join-code" placeholder="e.g. ABC123" maxlength="6" autocomplete="off" style="text-transform: uppercase;">
+          </div>
+          <button id="btn-join" class="btn-primary">Join Room</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ WAITING ROOM ═══════ -->
+  <div id="waiting-screen" class="screen">
+    <div class="waiting-container">
+      <div class="room-header glass-card">
+        <div class="room-code-display">
+          <span class="label">Room Code</span>
+          <span id="display-room-code" class="code">------</span>
+        </div>
+        <div class="invite-link-display">
+          <input type="text" id="display-invite-link" class="invite-link-input" readonly>
+          <button id="btn-copy-link" class="btn-icon" title="Copy invite link">📋</button>
+        </div>
+        <div class="room-settings-display">
+          <span class="setting-badge"><span class="setting-icon">🔄</span> <span id="display-rounds">3</span> Rounds</span>
+          <span class="setting-badge"><span class="setting-icon">⏱️</span> <span id="display-time">80</span>s Draw Time</span>
+        </div>
+      </div>
+
+      <div class="players-waiting glass-card">
+        <h2>Players</h2>
+        <div id="waiting-player-list" class="player-list"></div>
+      </div>
+
+      <button id="btn-start" class="btn-primary btn-start" style="display:none;">Start Game</button>
+      <p id="waiting-msg" class="waiting-msg">Waiting for the host to start...</p>
+    </div>
+  </div>
+
+  <!-- ═══════ GAME SCREEN ═══════ -->
+  <div id="game-screen" class="screen">
+    <div class="game-layout">
+      <!-- Left: Scoreboard -->
+      <div class="game-sidebar glass-card">
+        <div class="round-info">
+          <span>Round <span id="game-round">1</span> / <span id="game-total-rounds">3</span></span>
+        </div>
+        <div id="scoreboard" class="scoreboard"></div>
+      </div>
+
+      <!-- Center: Canvas area -->
+      <div class="game-center">
+        <!-- Top bar -->
+        <div class="game-topbar glass-card">
+          <div class="word-display">
+            <span id="word-hint" class="word-hint">_ _ _ _ _</span>
+          </div>
+          <div class="timer-display">
+            <svg class="timer-ring" viewBox="0 0 48 48">
+              <circle class="timer-ring-bg" cx="24" cy="24" r="20" />
+              <circle id="timer-ring-progress" class="timer-ring-fg" cx="24" cy="24" r="20" />
+            </svg>
+            <span id="timer-text" class="timer-text">80</span>
+          </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-wrapper">
+          <canvas id="draw-canvas" width="800" height="560"></canvas>
+          <!-- Word Selection Overlay -->
+          <div id="word-select-overlay" class="word-select-overlay hidden">
+            <div class="word-select-card glass-card">
+              <h3>Choose a word to draw!</h3>
+              <div id="word-choices" class="word-choices"></div>
+            </div>
+          </div>
+          <!-- Round End Overlay -->
+          <div id="round-end-overlay" class="round-end-overlay hidden">
+            <div class="round-end-card glass-card">
+              <h3 id="round-end-title">Time's up!</h3>
+              <p>The word was: <strong id="round-end-word"></strong></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drawing Tools (only visible to drawer) -->
+        <div id="drawing-tools" class="drawing-tools glass-card hidden">
+          <div class="tool-group">
+            <button class="tool-btn active" data-tool="pen" title="Pen">✏️</button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser">🧹</button>
+            <button class="tool-btn" data-tool="fill" title="Fill">🪣</button>
+          </div>
+          <div class="tool-group">
+            <input type="range" id="brush-size" class="brush-slider" min="2" max="40" value="5">
+            <span id="brush-size-label" class="size-label">5</span>
+          </div>
+          <div class="tool-group colors">
+            <div class="color-btn active" data-color="#000000" style="background:#000000;"></div>
+            <div class="color-btn" data-color="#ffffff" style="background:#ffffff; border:1px solid #ccc;"></div>
+            <div class="color-btn" data-color="#ef4444" style="background:#ef4444;"></div>
+            <div class="color-btn" data-color="#f97316" style="background:#f97316;"></div>
+            <div class="color-btn" data-color="#eab308" style="background:#eab308;"></div>
+            <div class="color-btn" data-color="#22c55e" style="background:#22c55e;"></div>
+            <div class="color-btn" data-color="#3b82f6" style="background:#3b82f6;"></div>
+            <div class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6;"></div>
+            <div class="color-btn" data-color="#ec4899" style="background:#ec4899;"></div>
+            <div class="color-btn" data-color="#78716c" style="background:#78716c;"></div>
+            <div class="color-btn" data-color="#92400e" style="background:#92400e;"></div>
+            <div class="color-btn" data-color="#164e63" style="background:#164e63;"></div>
+          </div>
+          <div class="tool-group">
+            <button id="btn-undo" class="tool-btn" title="Undo">↩️</button>
+            <button id="btn-clear" class="tool-btn" title="Clear Canvas">🗑️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Chat -->
+      <div class="game-chat glass-card">
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="Type your guess..." maxlength="200" autocomplete="off">
+          <button id="btn-send" class="btn-send">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ GAME OVER SCREEN ═══════ -->
+  <div id="gameover-screen" class="screen">
+    <div class="gameover-container">
+      <div class="gameover-card glass-card">
+        <h1 class="gameover-title">🏆 Game Over!</h1>
+        <div id="final-podium" class="podium"></div>
+        <div id="final-scores" class="final-scores"></div>
+        <div class="gameover-actions">
+          <button id="btn-replay-drawings" class="btn-secondary">🎬 Watch Replay</button>
+          <button id="btn-play-again" class="btn-primary">Play Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ REPLAY SCREEN ═══════ -->
+  <div id="replay-screen" class="screen">
+    <div class="replay-container">
+      <div class="replay-header glass-card">
+        <h2>🎬 Drawing Replay</h2>
+        <div class="replay-controls">
+          <button id="replay-prev" class="btn-icon" title="Previous Round">⏮</button>
+          <button id="replay-play" class="btn-icon" title="Play/Pause">▶️</button>
+          <button id="replay-next" class="btn-icon" title="Next Round">⏭</button>
+          <div class="replay-speed">
+            <label>Speed:</label>
+            <select id="replay-speed-select">
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="2">2x</option>
+              <option value="4">4x</option>
+            </select>
+          </div>
+          <span id="replay-round-info" class="replay-info">Round 1</span>
+        </div>
+        <button id="replay-close" class="btn-secondary">Back to Results</button>
+      </div>
+      <div class="replay-canvas-wrapper">
+        <canvas id="replay-canvas" width="800" height="560"></canvas>
+        <div id="replay-word-display" class="replay-word"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ TOAST NOTIFICATIONS ═══════ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/lobby.js"></script>
+  <script src="js/replay.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
