@@ -32,5 +32,13 @@ npm start
 > The game will be accessible at **http://localhost:3000** (or port 4000 if 3000 is occupied).
 > For full architecture details, capacity testing, and the anti-cheat system explanation, please read the [Q1 README](./Q1/README.md).
 
-### Question 2
-*(To be completed inside the Q2 folder)*
+### Question 2: System Design (Listen Together Rooms)
+This section contains a comprehensive System Design document for a highly scalable, Spotify-style music streaming service featuring real-time "Listen Together" rooms. 
+
+The design covers:
+* **Scale & Architecture:** Handling 20 million MAUs, 2 million peak concurrent listeners, and massive audio delivery (320 Gbps) using CDNs and Adaptive Bitrate (ABR) CMAF segments.
+* **Real-time Syncing:** How to achieve <200ms synchronization across thousands of clients using time-anchored commands, WebSocket fan-outs, and drift correction.
+* **Data Storage:** The breakdown of how Postgres, Redis, OpenSearch, etcd, and Kafka are utilized together to guarantee consistency and low latency.
+* **Failure Handling:** Strategies for dealing with room node crashes, region outages, and reconnect storms.
+
+> Please navigate to the `Q2` directory and read the [Q2 README](./Q2/README.md) for the complete architecture document and Mermaid diagrams.
