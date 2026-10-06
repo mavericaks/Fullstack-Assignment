@@ -159,7 +159,11 @@ socket.on('reconnect-success', (data) => {
 
 socket.on('reconnect-failed', () => {
   clearSession();
-  // Stay on lobby screen
+  myPlayer = null;
+  currentRoom = null;
+  isDrawer = false;
+  showScreen('lobby-screen');
+  showToast('Connection lost or server restarted', 'error');
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -498,7 +502,7 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
 socket.on('connect', () => {
   console.log('Connected to server');
   const saved = loadSession();
-  if (saved && saved.token && !myPlayer) {
+  if (saved && saved.token) {
     socket.emit('reconnect-session', { sessionToken: saved.token });
   }
 });
