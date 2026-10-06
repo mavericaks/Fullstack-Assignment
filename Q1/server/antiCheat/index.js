@@ -52,6 +52,7 @@ class AntiCheatService {
 
   async performOCRCheck(roomCode, room, strokes) {
     const text = await ocrWorker.recognize(strokes);
+    console.log('OCR DETECTED:', text);
     if (!text) return;
 
     // Check words returned by OCR (with confidence)

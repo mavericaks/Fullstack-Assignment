@@ -15,7 +15,7 @@ Drawly is a highly scalable, real-time multiplayer Pictionary-style game. Player
    ```bash
    cd Q1
    ```
-2. **Install dependencies:**
+2. **Install dependencies (Required before starting):**
    ```bash
    npm install
    ```

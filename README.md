@@ -25,7 +25,7 @@ Fullstack-Assignment/
 ## Running the Solutions
 
 ### Question 1: Drawly (Multiplayer Drawing Game)
-To run the Drawly game, navigate to the `Q1` directory and start the server:
+To run the Drawly game, navigate to the `Q1` directory, install the required Node dependencies, and start the server:
 
 ```bash
 cd Q1
