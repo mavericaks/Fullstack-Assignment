@@ -34,7 +34,7 @@ test('Full Game', async (t) => {
     const drawCounts = { 'P1': 0, 'P2': 0, 'P3': 0 };
 
     for (let turn = 0; turn < 6; turn++) {
-      for (const p of players) p.events.length = 0;
+      if (turn > 0) for (const p of players) p.events.length = 0;
       // Find who is drawing
       const drawerProm = Promise.any(players.map(p => p.waitFor('choose-word', undefined, 8000).then(() => p)));
       const drawer = await drawerProm;
