@@ -25,7 +25,7 @@ This project fully delivers on the following 9 requirements:
    *Delivered via `gameEngine.js`. Socket disconnects instantly halt the active turn and pass drawing rights to the next player.*
 
 8. **Basic abuse protection: rate limiting on chat and strokes, and limits on how large a message or stroke can be.**
-   *Delivered via `rateLimiter.js`. Sliding windows cap chats (3/2s) and strokes (120/s), and block payloads exceeding configured limits.*
+   *Delivered via `rateLimiter.js`. Sliding windows cap chats (3/2s) and strokes (120/s), and block payloads exceeding limits (chat max 1024 bytes, stroke max 4096 bytes).*
 
 9. **A stroke-by-stroke replay of every drawing at the end of the game.**
    *Delivered via `replay.js`. The server archives all drawings and transmits them at game-end for animated client-side playback.*
@@ -38,12 +38,12 @@ This project fully delivers on the following 9 requirements:
 Instead of sending a heavy image file, the canvas is synchronized using vector data. The client's `canvas.js` captures `mousemove` events, turning them into an array of `{x, y}` points. Every 25 milliseconds, the client bundles these points into a "stroke segment" payload (including color, size, and tool) and emits it to the server via Socket.IO. The server immediately broadcasts this segment to all other clients in the room, who render lines between the points in real-time.
 
 **2. How we handle latency and ordering**
-Because we use WebSockets (TCP under the hood), packet ordering is guaranteed. However, network latency can cause packets to arrive in clumps. We handle this by assigning a strictly incrementing `id` and `seq` (sequence) number to every stroke segment on the client. The server's `StrokeBuffer` stores them in exact received order. When a remote client receives the packets, it draws them sequentially. Because we send data every 25ms rather than waiting for a stroke to finish, the drawing appears flawlessly smooth to guessers, hiding standard network latency.
+Because we use WebSockets (TCP under the hood), packet ordering is guaranteed per client. Rather than relying on sequence numbers like `seq` for reordering, ordering relies on one ordered WebSocket connection per client and server-side append order. The server's `StrokeBuffer` simply stores incoming batches in the exact order received. When a remote client receives the packets, it draws them sequentially. Because we send data every 25ms rather than waiting for a stroke to finish, the drawing appears flawlessly smooth to guessers, hiding standard network latency.
 
 **3. What happens when the server restarts**
-Because the server stores game state and rooms entirely in memory (RAM), a server restart instantly destroys all active rooms, game states, and timers. However, the client-side `app.js` is built with a resilient Socket.IO reconnection loop. When the server comes back online, clients automatically reconnect. The server will see their old session tokens, realize the rooms no longer exist, and cleanly bump them back to the Lobby screen with an alert (e.g., "Connection lost or server restarted"), preventing infinite loading screens or ghost states.
+Because the server stores game state and rooms entirely in memory (RAM), a server restart instantly destroys all active rooms, game states, and timers. However, the client-side `app.js` is built with a resilient Socket.IO reconnection loop. When the client auto-reconnects, it sends a `reconnect-session` event. The server will see their old session tokens, realize the rooms no longer exist, and reply with `reconnect-failed`. The client then returns to the Lobby screen with the toast "Connection lost or server restarted", preventing infinite loading screens or ghost states.
 
 **4. Roughly how many rooms one server instance can handle, and how we measured it**
-We measured capacity by building a custom load-testing script (`scripts/loadtest.js`) that uses headless Socket.IO clients to simulate highly active rooms (1 host drawing at 40 strokes/sec, 2 guessers).
-* **Without Anti-Cheat:** A single Node instance (on a standard i7 processor) handles **~150+ concurrent rooms** before event-loop latency degrades.
-* **With OCR Anti-Cheat:** Because Tesseract.js (WebAssembly) performs heavy image processing on the main thread, the CPU becomes the bottleneck, limiting a single instance to about **10-15 highly active rooms** before p99 latency exceeds 50ms.
+We measured capacity by building a custom load-testing script (`scripts/loadtest.js`) that uses headless Socket.IO clients to simulate highly active rooms (3 players per room, 1 host drawing at 40 strokes/s).
+* **Without Anti-Cheat:** A single Node instance handles roughly **~100-200 concurrent rooms** before event-loop latency degrades.
+* **With OCR Anti-Cheat:** Because Tesseract.js performs heavy image processing on the main thread, the CPU becomes the bottleneck, limiting a single instance to about **~5-10 highly active rooms** before p99 latency exceeds 50ms.

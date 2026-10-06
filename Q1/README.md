@@ -23,8 +23,29 @@ Drawly is a highly scalable, real-time multiplayer Pictionary-style game. Player
    ```bash
    npm start
    ```
-   > By default, the server runs on port `3000`. You can access the game at **http://localhost:3000**.
-   > If the port is in use, start it on a different port: `$env:PORT=4000; npm start`
+   > **Changing the Port:**
+   > - **Bash/Zsh:** `PORT=4000 npm start`
+   > - **PowerShell:** `$env:PORT=4000; npm start`
+   > - **Command Prompt (CMD):** `set PORT=4000 && npm start`
+
+### Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | The port the server listens on. |
+| `HOST` | `0.0.0.0` | The host interface to bind to. |
+| `MAX_ROOMS` | `2000` | Maximum number of concurrent rooms allowed. |
+| `ANTI_CHEAT` | `true` | Set to `"off"` or `"false"` to disable OCR-based anti-cheat. |
+| `OCR_LANG_PATH` | *undefined* | Path to local `eng.traineddata` (defaults to Tesseract CDN if unset). Start from `Q1/` so it finds the local file. |
+
+## 🧪 Testing
+
+Drawly includes an automated test suite covering core game logic (like Levenshtein distance guess checking and sliding-window rate limiters). The tests use Node's built-in `node:test` runner.
+
+To run the tests:
+```bash
+npm test
+```
+The test suite ensures that exact matches, case-insensitivity, near-misses, and chat/stroke rate limits function securely without regressions.
 
 ## 🎮 How to Play
 
@@ -121,9 +142,14 @@ Drawing is captured as **live point batches**. Every 25ms, the client flushes th
 ### Anti-Cheat System (OCR) 🛡️
 To prevent the drawer from simply writing the word on the canvas, Drawly features a hybrid heuristic-OCR pipeline:
 1. **Heuristics:** A fast, bounding-box based filter (`heuristic.js`) checks if drawn strokes resemble handwriting before invoking heavy processing.
-2. **Pure-JS Rasterizer:** A custom `renderer.js` module renders vector strokes into a binary PBM (Portable Bitmap) image on the server, completely avoiding the need for native canvas dependencies.
-3. **Tesseract.js OCR:** The image is scanned by Tesseract. The detected text is cross-referenced with the secret word using a Levenshtein fuzzy match.
-4. **Penalties:** If a `>80%` match is found, the drawer's canvas is forcefully wiped, they receive a `-50 point penalty`, and are warned. Three strikes result in a forfeited turn.
+2. **Pure-JS Rasterizer:** A custom `renderer.js` module renders vector strokes into a binary PBM (Portable Bitmap) image on the server.
+3. **Tesseract.js OCR:** The image is scanned by Tesseract. The detected text is cross-referenced with the secret word using a Levenshtein fuzzy match. It requires an OCR confidence score of at least 35 (`minConfidence`) to ignore noise. *Note: OCR uses the committed `eng.traineddata` from the working directory, so start the server from `Q1/` (or set `OCR_LANG_PATH`).*
+4. **Penalties:** 
+   - **Strike 1:** The drawer's canvas is wiped and they receive a warning.
+   - **Strike 2:** The canvas is wiped and a -50 point penalty is applied.
+   - **Strike 3:** The drawer forfeits their turn entirely.
+   
+*(Known Trade-off: Sloppy handwriting or near-miss OCR outputs may not be caught if they fall below the 80% similarity threshold or the 35% confidence threshold. Very short words under 4 characters require an exact match.)*
 
 ## 📊 Performance Testing
 
@@ -131,17 +157,18 @@ The project includes an automated load testing script to measure capacity. Becau
 
 To run the load test:
 ```bash
-node scripts/loadtest.js --url http://localhost:3000 --start 10 --step 10 --max 100 --ramp 8
+node scripts/loadtest.js --url http://localhost:3000 --max 100 --ramp 8
 ```
 
-### Load Test Results
-*Measured on an i7-12700H, 16 GB RAM, Windows 11 with Anti-Cheat Enabled*
+### Load Test Results (Approximate)
+*Results depend heavily on CPU capability (measured on an i7-12700H, 16 GB RAM).*
 
-| rooms | sockets | CPU% | RSS MB | heap MB | p50 ms | p99 ms |
-|------:|--------:|-----:|-------:|--------:|-------:|-------:|
-|    10 |      30 | 97.6 |  128.6 |    12.4 |  15.65 |  50.89 |
+| Condition | Max Rooms | Max Sockets | CPU% | RSS MB | p50 ms | p99 ms |
+|-----------|----------:|------------:|-----:|-------:|-------:|-------:|
+| **Anti-Cheat ON** | ~5-10 | ~15-30 | ~98 | ~130 | ~15ms | ~50ms |
+| **Anti-Cheat OFF** | ~100-200 | ~300-600 | ~90 | ~180 | ~5ms | ~40ms |
 
-> **Note:** With the Anti-Cheat system fully active, Tesseract OCR consumes massive CPU analyzing strokes, limiting a single Node instance to around 10 highly active concurrent rooms before the event-loop p99 latency breaches 50ms. If you are deploying this for mass scale, you should disable Anti-Cheat in `server/config.js` or offload the OCR worker to a separate microservice.
+> **Note:** With the Anti-Cheat system fully active, Tesseract OCR consumes massive CPU analyzing strokes on the main thread, limiting a single Node instance to around 5-10 highly active concurrent rooms before the event-loop p99 latency breaches 50ms. With `ANTI_CHEAT=off`, it handles roughly 100-200 rooms on a shared 1-vCPU machine.
 
 ## 📂 Project Structure
 

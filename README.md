@@ -5,19 +5,22 @@ This repository contains the solutions for the Sapien Robot Full Stack Assignmen
 ## Repository Structure
 
 ```
-Sapien_Robot/
+Fullstack-Assignment/
 ├── Q1/                               # Solution for Question 1 (Drawly - Multiplayer Pictionary)
 │   ├── public/                       # Frontend client code (HTML, CSS, JS)
 │   ├── server/                       # Backend server code (Node.js, Express, Socket.IO)
-│   ├── scripts/                      # Load testing and rate limit testing scripts
+│   ├── scripts/                      # Load testing, scripts, and legacy verification
+│   ├── tests/                        # Automated unit tests for core game logic
+│   ├── "Demo Video"/                 # Demonstration video of the Q1 solution
 │   ├── Documentation.md              # Project Documentation & Short Notes
-│   ├── Final_Deliverables_Report.md  # Detailed requirements mapping
-│   ├── Video_Recording_Plan.md       # Showcase video storyboard and AI voiceover script
 │   └── README.md                     # Q1 specific setup and architecture details
-├── Q2/                               # Solution for Question 2 (Reserved)
+├── Q2/                               # System design doc: Listen Together rooms
 ├── Full stack assignment_1Oct.pdf    # Original Assignment Document
 └── README.md                         # This file
 ```
+
+**Requires Node >=22**
+*Check out the [Demo Video](./Q1/Demo%20Video/Final%20Demo.mp4) to see the game in action!*
 
 ## Running the Solutions
 
@@ -29,7 +32,7 @@ cd Q1
 npm install
 npm start
 ```
-> The game will be accessible at **http://localhost:3000** (or port 4000 if 3000 is occupied).
+> The game will be accessible at **http://localhost:3000**. If port 3000 is occupied, you can set a different port using the `PORT` environment variable.
 > For full architecture details, capacity testing, and the anti-cheat system explanation, please read the [Q1 README](./Q1/README.md).
 
 ### Question 2: System Design (Listen Together Rooms)
