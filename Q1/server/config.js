@@ -130,9 +130,6 @@ const config = {
     maxStrikes: 3,                 // 3rd violation ends the drawer's turn
     penaltyPoints: 50,             // deducted from the 2nd strike onwards (score never < 0)
     ocr: {
-      workers: envInt('OCR_WORKERS', 1),
-      timeoutMs: 8000,
-      maxQueue: 20,                // if OCR is overloaded, new checks are skipped (fail-open)
       langPath: process.env.OCR_LANG_PATH || undefined, // undefined → tesseract.js default CDN
       minConfidence: 35            // ignore OCR reads below this confidence (0-100)
     }

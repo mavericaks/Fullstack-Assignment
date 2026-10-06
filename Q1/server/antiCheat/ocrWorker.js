@@ -33,8 +33,8 @@ class OCRService {
     const pbmBuffer = renderer.toPBM();
 
     try {
-      const { data: { text } } = await this.worker.recognize(pbmBuffer);
-      return text.trim().toLowerCase();
+      const { data } = await this.worker.recognize(pbmBuffer);
+      return data.words;
     } catch (e) {
       console.error('OCR Recognition failed:', e);
       return '';

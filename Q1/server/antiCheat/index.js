@@ -54,31 +54,33 @@ class AntiCheatService {
     const text = await ocrWorker.recognize(strokes);
     if (!text) return;
 
+    // Check words returned by OCR (with confidence)
     const secretWord = room.currentWord.toLowerCase();
-    
-    // We check if the OCR detected text is suspiciously close to the secret word.
-    // If the secret word is short, we demand an exact match.
-    // If it's longer, we allow some Levenshtein distance (e.g. 80% similarity).
-    
-    // Tesseract often returns extra garbage characters, so we split by word
-    // and check if any word matches the secret word closely.
-    const detectedWords = text.split(/\s+/).filter(w => w.length > 0);
-    
     let isCheating = false;
 
-    for (const detected of detectedWords) {
-      // Check if it's an exact substring
-      if (detected.includes(secretWord) || secretWord.includes(detected)) {
-        isCheating = true;
-        break;
-      }
+    for (const detectedWord of text) {
+      const detected = detectedWord.text.trim().toLowerCase();
+      const confidence = detectedWord.confidence;
+      if (detected.length === 0) continue;
 
-      if (secretWord.length >= config.antiCheat.exactMatchBelowLength) {
+      if (secretWord.length < config.antiCheat.exactMatchBelowLength) {
+        // Exact match required
+        if (detected === secretWord && confidence >= config.antiCheat.ocr.minConfidence) {
+          isCheating = true;
+          break;
+        }
+      } else {
+        // Longer secret word: substring or levenshtein allowed
+        if ((detected.includes(secretWord) || secretWord.includes(detected)) && detected.length >= 3 && confidence >= config.antiCheat.ocr.minConfidence) {
+          isCheating = true;
+          break;
+        }
+
         const dist = GuessChecker.levenshtein(detected, secretWord);
         const maxLen = Math.max(detected.length, secretWord.length);
         const similarity = 1 - (dist / maxLen);
 
-        if (similarity >= config.antiCheat.similarityThreshold) {
+        if (similarity >= config.antiCheat.similarityThreshold && confidence >= config.antiCheat.ocr.minConfidence) {
           isCheating = true;
           break;
         }
@@ -104,18 +106,23 @@ class AntiCheatService {
       this.gameEngine._endTurn(roomCode, false);
       this.strikes.set(drawerId, 0); // reset after skip
     } else {
-      // Warn and penalize
-      const penalty = config.antiCheat.penaltyPoints;
-      drawer.score = Math.max(0, drawer.score - penalty);
+      // Warn and penalize (penalty from 2nd strike onwards)
+      const penalty = strikeCount >= 2 ? config.antiCheat.penaltyPoints : 0;
+      if (penalty > 0) {
+        drawer.score = Math.max(0, drawer.score - penalty);
+      }
       
-      this.io.to(drawer.socketId).emit('error-msg', { message: `Warning: Do not write the word! (${strikeCount}/${config.antiCheat.maxStrikes} strikes). Penalty: -${penalty} pts.` });
+      const penaltyMsg = penalty > 0 ? ` Penalty: -${penalty} pts.` : '';
+      this.io.to(drawer.socketId).emit('error-msg', { message: `Warning: Do not write the word! (${strikeCount}/${config.antiCheat.maxStrikes} strikes).${penaltyMsg}` });
       
       // Clear their canvas to stop them
       this.gameEngine.getStrokeBuffer(roomCode).addClear();
       this.io.to(roomCode).emit('clear-canvas');
       
-      // Update scoreboard to reflect penalty
-      this.io.to(roomCode).emit('player-joined', { players: this.gameEngine.roomManager.getPlayerList(roomCode), player: drawer });
+      // Update scoreboard to reflect penalty if applied
+      if (penalty > 0) {
+        this.io.to(roomCode).emit('player-joined', { players: this.gameEngine.roomManager.getPlayerList(roomCode), player: drawer });
+      }
     }
   }
 }
