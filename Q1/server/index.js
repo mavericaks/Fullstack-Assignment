@@ -14,6 +14,13 @@ const GameEngine = require('./gameEngine');
 const RateLimiter = require('./rateLimiter');
 const AntiCheatService = require('./antiCheat');
 
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
 const RECONNECT_GRACE_MS = 30000;
 const CANVAS_W = 800;
 const CANVAS_H = 560;
@@ -165,12 +172,25 @@ function sendCurrentRoundState(socket, room, playerId) {
 io.on('connection', (socket) => {
   console.log(`[CONNECT] ${socket.id}`);
 
+  const safeHandler = (fn) => (...args) => {
+    try {
+      let payload = args[0];
+      if (payload === null || (typeof payload !== 'object' && typeof payload !== 'undefined')) {
+        payload = {};
+      }
+      args[0] = payload || {};
+      fn(...args);
+    } catch (err) {
+      console.error(`[SOCKET ERROR] Socket ${socket.id}:`, err);
+    }
+  };
+
   // ── ROOM MANAGEMENT ──────────────────────────────────────────────────────
 
   /**
    * Create a new room
    */
-  socket.on('create-room', ({ playerName, settings }) => {
+  socket.on('create-room', safeHandler(({ playerName, settings }) => {
     if (!playerName || playerName.trim().length === 0) {
       socket.emit('error-msg', { message: 'Name is required' });
       return;
@@ -197,12 +217,12 @@ io.on('connection', (socket) => {
     });
 
     console.log(`[ROOM CREATED] ${result.roomCode} by ${playerName}`);
-  });
+  }));
 
   /**
    * Join an existing room
    */
-  socket.on('join-room', ({ roomCode, playerName }) => {
+  socket.on('join-room', safeHandler(({ roomCode, playerName }) => {
     if (!playerName || playerName.trim().length === 0) {
       socket.emit('error-msg', { message: 'Name is required' });
       return;
@@ -250,12 +270,12 @@ io.on('connection', (socket) => {
     });
 
     console.log(`[JOIN] ${playerName} joined ${result.room.code}`);
-  });
+  }));
 
   /**
    * Reconnect using session token
    */
-  socket.on('reconnect-session', ({ sessionToken } = {}) => {
+  socket.on('reconnect-session', safeHandler(({ sessionToken } = {}) => {
     if (typeof sessionToken !== 'string') {
       socket.emit('reconnect-failed', {});
       return;
@@ -297,14 +317,14 @@ io.on('connection', (socket) => {
     });
 
     console.log(`[RECONNECT] ${result.player.name} back in ${result.room.code} (score ${result.player.score})`);
-  });
+  }));
 
   // ── GAME MANAGEMENT ──────────────────────────────────────────────────────
 
   /**
    * Host starts the game
    */
-  socket.on('start-game', () => {
+  socket.on('start-game', safeHandler(() => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -322,12 +342,12 @@ io.on('connection', (socket) => {
 
     gameEngine.startGame(room.code);
     console.log(`[GAME START] ${room.code}`);
-  });
+  }));
 
   /**
    * Host updates game settings
    */
-  socket.on('update-settings', ({ rounds, drawTime, customWords }) => {
+  socket.on('update-settings', safeHandler(({ rounds, drawTime, customWords }) => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -343,12 +363,12 @@ io.on('connection', (socket) => {
     }
 
     io.to(room.code).emit('settings-updated', { settings: room.settings });
-  });
+  }));
 
   /**
    * Drawer picks a word
    */
-  socket.on('word-chosen', ({ wordIndex }) => {
+  socket.on('word-chosen', safeHandler(({ wordIndex }) => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -361,14 +381,14 @@ io.on('connection', (socket) => {
     if (wordIndex < 0 || wordIndex > 2) return;
 
     gameEngine.wordChosen(room.code, player.id, wordIndex);
-  });
+  }));
 
   // ── DRAWING ──────────────────────────────────────────────────────────────
 
   /**
    * Stream a live stroke batch (sent every ~25ms while the drawer draws)
    */
-  socket.on('draw-stroke', (raw) => {
+  socket.on('draw-stroke', safeHandler((raw) => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -392,12 +412,12 @@ io.on('connection', (socket) => {
 
     // Relay to everyone else. One WebSocket per client => in-order delivery.
     socket.to(room.code).emit('draw-stroke', seg);
-  });
+  }));
 
   /**
    * Undo last stroke
    */
-  socket.on('undo', () => {
+  socket.on('undo', safeHandler(() => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -409,12 +429,12 @@ io.on('connection', (socket) => {
     if (strokeBuffer) strokeBuffer.addUndo();
 
     socket.to(room.code).emit('undo');
-  });
+  }));
 
   /**
    * Clear the canvas
    */
-  socket.on('clear-canvas', () => {
+  socket.on('clear-canvas', safeHandler(() => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -426,12 +446,12 @@ io.on('connection', (socket) => {
     if (strokeBuffer) strokeBuffer.addClear();
 
     socket.to(room.code).emit('clear-canvas');
-  });
+  }));
 
   /**
    * Fill an area with color
    */
-  socket.on('fill', (raw) => {
+  socket.on('fill', safeHandler((raw) => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
 
@@ -447,14 +467,14 @@ io.on('connection', (socket) => {
     if (strokeBuffer) strokeBuffer.addFill(fillData);
 
     socket.to(room.code).emit('fill', fillData);
-  });
+  }));
 
   // ── CHAT / GUESSING ──────────────────────────────────────────────────────
 
   /**
    * Handle a chat message / guess
    */
-  socket.on('chat-message', ({ message } = {}) => {
+  socket.on('chat-message', safeHandler(({ message } = {}) => {
     const data = roomManager.getBySocket(socket.id);
     if (!data) return;
     if (typeof message !== 'string') return;
@@ -569,11 +589,11 @@ io.on('connection', (socket) => {
           type: 'chat'
         });
     }
-  });
+  }));
 
   // ── DISCONNECTION ────────────────────────────────────────────────────────
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', safeHandler(() => {
     const result = roomManager.disconnect(socket.id);
     if (!result) return;
 
@@ -607,7 +627,7 @@ io.on('connection', (socket) => {
     }, RECONNECT_GRACE_MS + 500);
 
     console.log(`[DISCONNECT] ${player.name} from ${room.code} (30s grace)`);
-  });
+  }));
 });
 
 // ─── Start Server ────────────────────────────────────────────────────────────
