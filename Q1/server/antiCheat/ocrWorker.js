@@ -34,7 +34,13 @@ class OCRService {
 
     try {
       const { data } = await this.worker.recognize(pbmBuffer);
-      return data.words;
+      const text = data.text.trim().toLowerCase();
+      if (!text) return [];
+      
+      // Split into words, applying the global confidence
+      const words = text.split(/\s+/).map(w => ({ text: w, confidence: data.confidence }));
+      words.push({ text, confidence: data.confidence });
+      return words;
     } catch (e) {
       console.error('OCR Recognition failed:', e);
       return '';
