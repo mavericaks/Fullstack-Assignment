@@ -7,6 +7,7 @@
 const WordManager = require('./wordManager');
 const GuessChecker = require('./guessChecker');
 const StrokeBuffer = require('./strokeBuffer');
+const config = require('./config');
 
 class GameEngine {
   constructor(io, roomManager) {
@@ -109,7 +110,7 @@ class GameEngine {
       if (room.state === 'PICKING_WORD') {
         this.wordChosen(roomCode, drawerId, 0, words);
       }
-    }, 15000);
+    }, config.game.pickTimeoutMs);
   }
 
   /**
@@ -319,7 +320,7 @@ class GameEngine {
     // After 5 seconds, move to next turn
     setTimeout(() => {
       this._nextTurn(roomCode);
-    }, 5000);
+    }, config.game.roundEndDelayMs);
   }
 
   /**

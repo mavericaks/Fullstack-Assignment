@@ -164,7 +164,7 @@ class RoomManager {
     // Check 30-second grace period
     if (player.disconnectedAt) {
       const elapsed = Date.now() - player.disconnectedAt;
-      if (elapsed > 30000) {
+      if (elapsed > config.room.reconnectGraceMs) {
         // Grace period expired — remove old session
         this.sessions.delete(sessionToken);
         return null;
@@ -240,7 +240,7 @@ class RoomManager {
         if (r && this.getConnectedPlayers(r.code).length === 0) {
           this.destroyRoom(r.code);
         }
-      }, 300000); // 5-minute delayed cleanup
+      }, config.room.emptyRoomTtlMs);
     }
 
     return { room, player, wasDrawer };

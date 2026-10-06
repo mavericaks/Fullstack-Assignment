@@ -3,6 +3,7 @@
  */
 
 const defaultWords = require('./words.json');
+const config = require('./config');
 
 class WordManager {
   constructor(customWords = null, category = 'general') {
@@ -23,12 +24,12 @@ class WordManager {
     const available = this.words.filter(w => !this.usedWords.has(w));
 
     // If we've used too many, reset the used set
-    if (available.length < 3) {
+    if (available.length < config.game.wordChoices) {
       this.usedWords.clear();
-      return this._pickRandom(this.words, 3);
+      return this._pickRandom(this.words, config.game.wordChoices);
     }
 
-    return this._pickRandom(available, 3);
+    return this._pickRandom(available, config.game.wordChoices);
   }
 
   /**
@@ -76,10 +77,11 @@ class WordManager {
    */
   static getRevealCount(elapsed, total, wordLength) {
     const ratio = elapsed / total;
-    if (ratio < 0.40) return 0;          // First 40%: no hints
-    if (ratio < 0.60) return 1;          // 40-60%: 1 letter
-    if (ratio < 0.80) return 2;          // 60-80%: 2 letters
-    return Math.min(3, Math.floor(wordLength * 0.4)); // 80%+: up to 40% revealed
+    let reveal = 0;
+    for (const step of config.game.hintSchedule) {
+      if (ratio >= step.at) reveal = step.reveal;
+    }
+    return Math.min(reveal, Math.floor(wordLength * config.game.maxHintFraction));
   }
 
   /**

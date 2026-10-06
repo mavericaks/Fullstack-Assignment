@@ -13,6 +13,7 @@ const RoomManager = require('./roomManager');
 const GameEngine = require('./gameEngine');
 const RateLimiter = require('./rateLimiter');
 const AntiCheatService = require('./antiCheat');
+const config = require('./config');
 
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err);
@@ -21,19 +22,18 @@ process.on('unhandledRejection', (reason) => {
   console.error('[UNHANDLED REJECTION]', reason);
 });
 
-const RECONNECT_GRACE_MS = 30000;
-const CANVAS_W = 800;
-const CANVAS_H = 560;
-const MAX_POINTS_PER_SEGMENT = 64;
+const RECONNECT_GRACE_MS = config.room.reconnectGraceMs;
+const CANVAS_W = config.canvas.width;
+const CANVAS_H = config.canvas.height;
+const MAX_POINTS_PER_SEGMENT = config.canvas.maxPointsPerSegment;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  maxHttpBufferSize: 5e3, // 5KB max payload
-  // Detect a silently dropped client within ~15s (drives drawer-left recovery)
-  pingTimeout: 10000,
-  pingInterval: 5000
+  maxHttpBufferSize: config.server.maxHttpBufferSize,
+  pingTimeout: config.server.pingTimeoutMs,
+  pingInterval: config.server.pingIntervalMs
 });
 
 // Serve static files
@@ -200,7 +200,12 @@ io.on('connection', (socket) => {
    * Create a new room
    */
   socket.on('create-room', safeHandler(({ playerName, settings }) => {
-    if (!playerName || playerName.trim().length === 0) {
+    if (!rateLimiter.check(socket.id, 'room')) return;
+    if (roomManager.rooms.size >= config.room.maxRooms) {
+      socket.emit('error-msg', { message: 'Server is at maximum capacity' });
+      return;
+    }
+    if (!playerName || typeof playerName !== 'string' || playerName.trim().length === 0) {
       socket.emit('error-msg', { message: 'Name is required' });
       return;
     }
@@ -232,7 +237,8 @@ io.on('connection', (socket) => {
    * Join an existing room
    */
   socket.on('join-room', safeHandler(({ roomCode, playerName }) => {
-    if (!playerName || playerName.trim().length === 0) {
+    if (!rateLimiter.check(socket.id, 'room')) return;
+    if (!playerName || typeof playerName !== 'string' || playerName.trim().length === 0) {
       socket.emit('error-msg', { message: 'Name is required' });
       return;
     }

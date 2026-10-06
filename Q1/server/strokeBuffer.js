@@ -4,6 +4,8 @@
  * 2. End-of-game replay
  */
 
+const config = require('./config');
+
 class StrokeBuffer {
   constructor() {
     // roundIndex -> { strokes: [], undoStack: [], startTime: number }
@@ -49,13 +51,13 @@ class StrokeBuffer {
     if (!round) return false;
 
     // Hard caps per turn to bound server memory
-    if (round.totalPoints + seg.points.length > StrokeBuffer.MAX_POINTS_PER_TURN) return false;
+    if (round.totalPoints + seg.points.length > config.canvas.maxPointsPerTurn) return false;
 
     const now = Date.now() - round.startTime;
     let stroke = round.active.get(seg.id);
 
     if (!stroke) {
-      if (round.strokes.length >= StrokeBuffer.MAX_STROKES_PER_TURN) return false;
+      if (round.strokes.length >= config.canvas.maxStrokesPerTurn) return false;
       stroke = {
         id: seg.id,
         color: seg.color,
@@ -164,6 +166,4 @@ class StrokeBuffer {
 
 module.exports = StrokeBuffer;
 
-// Per-turn memory caps (a busy 3-minute drawing is typically < 10k points)
-StrokeBuffer.MAX_STROKES_PER_TURN = 3000;
-StrokeBuffer.MAX_POINTS_PER_TURN = 60000;
+

@@ -3,6 +3,8 @@
  * Limits chat messages and stroke events per player
  */
 
+const config = require('./config');
+
 class RateLimiter {
   constructor() {
     // playerID -> { chat: [timestamps], stroke: [timestamps] }
@@ -14,7 +16,7 @@ class RateLimiter {
    */
   _getBucket(playerId) {
     if (!this.buckets.has(playerId)) {
-      this.buckets.set(playerId, { chat: [], stroke: [] });
+      this.buckets.set(playerId, { chat: [], stroke: [], room: [], reconnect: [], control: [] });
     }
     return this.buckets.get(playerId);
   }
@@ -29,18 +31,13 @@ class RateLimiter {
     const bucket = this._getBucket(playerId);
     const now = Date.now();
 
-    const limits = {
-      chat: { maxCount: 3, windowMs: 2000 },    // 3 messages per 2 seconds
-      stroke: { maxCount: 120, windowMs: 1000 }   // 120 stroke events per second
-    };
-
-    const limit = limits[type];
+    const limit = config.rateLimits[type];
     if (!limit) return true;
 
     // Clean old entries outside the window
     bucket[type] = bucket[type].filter(t => now - t < limit.windowMs);
 
-    if (bucket[type].length >= limit.maxCount) {
+    if (bucket[type].length >= limit.max) {
       return false;
     }
 
@@ -58,12 +55,7 @@ class RateLimiter {
     const json = JSON.stringify(data);
     const sizeBytes = Buffer.byteLength(json, 'utf-8');
 
-    const maxSizes = {
-      chat: 1024,     // 1KB max for chat messages
-      stroke: 2048    // 2KB max for stroke data
-    };
-
-    return sizeBytes <= (maxSizes[type] || 1024);
+    return sizeBytes <= (config.payloadLimits[type] || 1024);
   }
 
   /**
