@@ -24,6 +24,12 @@ class GameEngine {
     const room = this.roomManager.getRoom(roomCode);
     if (!room) return false;
     if (room.players.size < 2) return false;
+    if (room.state !== 'LOBBY' && room.state !== 'GAME_OVER') return false;
+
+    // Clear any existing timers before restarting
+    if (room.timer) { clearInterval(room.timer); room.timer = null; }
+    if (room.hintTimer) { clearInterval(room.hintTimer); room.hintTimer = null; }
+    if (room.pickTimer) { clearTimeout(room.pickTimer); room.pickTimer = null; }
 
     const customWords = room.settings.customWords.length > 0
       ? room.settings.customWords
@@ -318,17 +324,23 @@ class GameEngine {
     });
 
     // After 5 seconds, move to next turn
+    const expectedTurnId = `${room.currentRound}-${room.currentDrawerIndex}`;
     setTimeout(() => {
-      this._nextTurn(roomCode);
+      this._nextTurn(roomCode, expectedTurnId);
     }, config.game.roundEndDelayMs);
   }
 
   /**
    * Advance to the next turn or round
    */
-  _nextTurn(roomCode) {
+  _nextTurn(roomCode, expectedTurnId) {
     const room = this.roomManager.getRoom(roomCode);
     if (!room) return;
+
+    if (expectedTurnId) {
+      const currentTurnId = `${room.currentRound}-${room.currentDrawerIndex}`;
+      if (currentTurnId !== expectedTurnId) return;
+    }
 
     // Move to next drawer
     room.currentDrawerIndex++;
@@ -393,16 +405,20 @@ class GameEngine {
     if (!room) return;
 
     if (room.state === 'DRAWING' || room.state === 'PICKING_WORD') {
+      room.state = 'TURN_SKIPPING';
+
       this.io.to(roomCode).emit('drawer-left', {
         message: 'The drawer left! Skipping to next turn...'
       });
 
       // Clear timers and advance
-      if (room.timer) clearInterval(room.timer);
-      if (room.pickTimer) clearTimeout(room.pickTimer);
+      if (room.timer) { clearInterval(room.timer); room.timer = null; }
+      if (room.hintTimer) { clearInterval(room.hintTimer); room.hintTimer = null; }
+      if (room.pickTimer) { clearTimeout(room.pickTimer); room.pickTimer = null; }
 
+      const expectedTurnId = `${room.currentRound}-${room.currentDrawerIndex}`;
       setTimeout(() => {
-        this._nextTurn(roomCode);
+        this._nextTurn(roomCode, expectedTurnId);
       }, 2000);
     }
   }
