@@ -546,8 +546,8 @@ io.on('connection', (socket) => {
         break;
 
       case 'close':
-        // Send regular message to everyone
-        io.to(room.code).emit('chat-message', {
+        // Send the typo back to the guesser so they see it, but hide from others
+        socket.emit('chat-message', {
           player: result.player,
           playerId: result.playerId,
           message: result.message,
