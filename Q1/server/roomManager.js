@@ -4,6 +4,7 @@
  */
 
 const { v4: uuidv4 } = require('uuid');
+const config = require('./config');
 
 class RoomManager {
   constructor() {
@@ -52,16 +53,32 @@ class RoomManager {
       disconnectedAt: null
     };
 
+    const sConf = config.settings;
+    
+    let rounds = parseInt(settings.rounds, 10);
+    rounds = Number.isFinite(rounds) ? Math.min(sConf.rounds.max, Math.max(sConf.rounds.min, rounds)) : sConf.rounds.default;
+    
+    let drawTime = parseInt(settings.drawTime, 10);
+    drawTime = Number.isFinite(drawTime) ? Math.min(sConf.drawTime.max, Math.max(sConf.drawTime.min, drawTime)) : sConf.drawTime.default;
+    
+    let customWords = [];
+    if (Array.isArray(settings.customWords)) {
+      customWords = settings.customWords
+        .filter(w => typeof w === 'string' && w.trim().length > 0 && w.trim().length <= sConf.customWords.maxLength)
+        .map(w => w.trim())
+        .slice(0, sConf.customWords.maxCount);
+    }
+
     const room = {
       code: roomCode,
       host: playerId,
       players: new Map([[playerId, player]]),
       playerOrder: [playerId],
       settings: {
-        rounds: settings.rounds || 3,
-        drawTime: settings.drawTime || 80,
-        category: settings.category || 'general',
-        customWords: settings.customWords || []
+        rounds: rounds,
+        drawTime: drawTime,
+        category: typeof settings.category === 'string' ? settings.category : 'general',
+        customWords: customWords
       },
       state: 'LOBBY', // LOBBY, PICKING_WORD, DRAWING, ROUND_END, GAME_OVER
       currentRound: 0,
