@@ -124,6 +124,15 @@ function sanitizeFill(f) {
   return { x: clamp(Math.round(f.x), 0, CANVAS_W - 1), y: clamp(Math.round(f.y), 0, CANVAS_H - 1), color: f.color };
 }
 
+function getPublicSettings(settings) {
+  return {
+    rounds: settings.rounds,
+    drawTime: settings.drawTime,
+    category: settings.category,
+    customWordCount: settings.customWords ? settings.customWords.length : 0
+  };
+}
+
 /**
  * Bring a (late-joining or reconnecting) socket up to date with the live turn.
  * The word is only included if this player is the drawer.
@@ -256,7 +265,7 @@ io.on('connection', (socket) => {
         score: 0
       },
       players: roomManager.getPlayerList(result.room.code),
-      settings: result.room.settings,
+      settings: getPublicSettings(result.room.settings),
       gameState: result.room.state
     });
 
@@ -301,7 +310,7 @@ io.on('connection', (socket) => {
       },
       players: roomManager.getPlayerList(result.room.code),
       gameState: result.room.state,
-      settings: result.room.settings,
+      settings: result.player.isHost ? result.room.settings : getPublicSettings(result.room.settings),
       round: result.room.currentRound,
       totalRounds: result.room.settings.rounds,
       drawerId: result.room.playerOrder[result.room.currentDrawerIndex] || null
@@ -358,11 +367,15 @@ io.on('connection', (socket) => {
     if (drawTime) room.settings.drawTime = Math.min(180, Math.max(30, drawTime));
     if (customWords !== undefined) {
       room.settings.customWords = Array.isArray(customWords)
-        ? customWords.filter(w => w && w.length > 0 && w.length <= 30).slice(0, 500)
+        ? customWords.filter(w => w && typeof w === 'string' && w.length > 0 && w.length <= 30).slice(0, 500)
         : [];
     }
 
-    io.to(room.code).emit('settings-updated', { settings: room.settings });
+    for (const [pid, p] of room.players) {
+      if (!p.connected) continue;
+      const s = p.isHost ? room.settings : getPublicSettings(room.settings);
+      io.to(p.socketId).emit('settings-updated', { settings: s });
+    }
   }));
 
   /**
