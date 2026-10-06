@@ -94,7 +94,7 @@ sequenceDiagram
 
     Note over D,G: Round Starts
     loop Every 25ms
-        D->>D: Capture 60FPS mouse movements
+        D->>D: Capture mouse movements
         D->>S: Flush Stroke Batch [{x,y}, {x,y}...]
         S->>S: Validate bounds, size, colors
         S->>S: Store in Stroke Buffer
@@ -107,7 +107,7 @@ sequenceDiagram
 ```
 
 ### Real-Time Canvas Synchronization
-Drawing is captured as **live point batches** at 60FPS. Every 25ms, the client flushes these batches to the server. The server sanitizes the data (clamping coordinates, verifying colors, checking sizes) and relays it to all guessers. 
+Drawing is captured as **live point batches**. Every 25ms, the client flushes these batches to the server. The server sanitizes the data (clamping coordinates, verifying colors, checking sizes) and relays it to all guessers. 
 - **Zero visible lag:** Remote canvases render the strokes progressively, making the drawing appear exactly as the drawer moves their mouse.
 - **Mid-Round Joining:** A `StrokeBuffer` stores the history of the current turn, allowing late joiners or reconnecting players to instantly see the complete canvas upon joining.
 - **Memory Caps:** The buffer enforces hard limits (e.g., 3,000 strokes max) to ensure malicious users cannot OOM (Out-Of-Memory) the server.

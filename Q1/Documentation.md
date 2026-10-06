@@ -7,7 +7,7 @@ This project fully delivers on the following 9 requirements:
    *Delivered via `lobby.js` and `roomManager.js`. The host sets parameters and a shareable link is generated.*
 
 2. **Drawing tools: pen, colours, brush size, eraser, fill, undo and clear canvas. Strokes stream to every player as they are drawn, with no visible lag.**
-   *Delivered via `canvas.js`. 60FPS mouse sampling with 25ms server flushes ensures zero-lag streaming.*
+   *Delivered via `canvas.js`. Mouse sampling with 25ms server flushes ensures zero-lag streaming.*
 
 3. **Turn flow: the drawer picks from 3 words, then a countdown timer starts. Letter hints reveal over time. The round ends when time runs out or when everyone has guessed.**
    *Delivered via `gameEngine.js`. Word choices are provided, and letter hints progressively reveal at 40%, 60%, and 80% of the elapsed time.*
@@ -25,7 +25,7 @@ This project fully delivers on the following 9 requirements:
    *Delivered via `gameEngine.js`. Socket disconnects instantly halt the active turn and pass drawing rights to the next player.*
 
 8. **Basic abuse protection: rate limiting on chat and strokes, and limits on how large a message or stroke can be.**
-   *Delivered via `rateLimiter.js`. Sliding windows cap chats (3/2s) and strokes (120/s), and block payloads exceeding 1-4KB.*
+   *Delivered via `rateLimiter.js`. Sliding windows cap chats (3/2s) and strokes (120/s), and block payloads exceeding configured limits.*
 
 9. **A stroke-by-stroke replay of every drawing at the end of the game.**
    *Delivered via `replay.js`. The server archives all drawings and transmits them at game-end for animated client-side playback.*
@@ -35,7 +35,7 @@ This project fully delivers on the following 9 requirements:
 ## 🔑 Short Notes on System Architecture
 
 **1. How we sync the canvas and send stroke data**
-Instead of sending a heavy image file, the canvas is synchronized using vector data. The client's `canvas.js` captures `mousemove` events at 60 FPS, turning them into an array of `{x, y}` points. Every 25 milliseconds, the client bundles these points into a "stroke segment" payload (including color, size, and tool) and emits it to the server via Socket.IO. The server immediately broadcasts this segment to all other clients in the room, who render lines between the points in real-time.
+Instead of sending a heavy image file, the canvas is synchronized using vector data. The client's `canvas.js` captures `mousemove` events, turning them into an array of `{x, y}` points. Every 25 milliseconds, the client bundles these points into a "stroke segment" payload (including color, size, and tool) and emits it to the server via Socket.IO. The server immediately broadcasts this segment to all other clients in the room, who render lines between the points in real-time.
 
 **2. How we handle latency and ordering**
 Because we use WebSockets (TCP under the hood), packet ordering is guaranteed. However, network latency can cause packets to arrive in clumps. We handle this by assigning a strictly incrementing `id` and `seq` (sequence) number to every stroke segment on the client. The server's `StrokeBuffer` stores them in exact received order. When a remote client receives the packets, it draws them sequentially. Because we send data every 25ms rather than waiting for a stroke to finish, the drawing appears flawlessly smooth to guessers, hiding standard network latency.
