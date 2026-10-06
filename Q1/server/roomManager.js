@@ -134,10 +134,8 @@ class RoomManager {
 
     room.players.set(playerId, player);
 
-    // Add to player order only if game hasn't started or they're new
-    if (room.state === 'LOBBY') {
-      room.playerOrder.push(playerId);
-    }
+    // Add to player order so they get a turn to draw even if they join mid-game
+    room.playerOrder.push(playerId);
 
     this.sessions.set(sessionToken, { roomCode: room.code, playerId });
     this.socketMap.set(socketId, { roomCode: room.code, playerId, sessionToken });
