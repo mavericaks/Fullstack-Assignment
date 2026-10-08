@@ -363,3 +363,28 @@ class RoomManager {
 }
 
 module.exports = RoomManager;
+
+/* -------------------------------------------------------------------------
+ * 🧑‍🏫 REVIEWER NOTES & CODE WALKTHROUGH
+ * -------------------------------------------------------------------------
+ * This file manages Rooms, Players, and the crucial Reconnect Grace Period.
+ * 
+ * 1. SESSION TOKENS (`createRoom` / `joinRoom`): When a player joins, they are 
+ *    issued a `sessionToken` (a random UUID). This token is sent to the client 
+ *    and stored in `sessionStorage`. This acts as their secure "password" to 
+ *    prove their identity if they disconnect.
+ * 
+ * 2. DISCONNECT HANDLING (`disconnect`): When a WebSocket closes, we DO NOT 
+ *    delete the player immediately. Instead, we mark them `connected: false` 
+ *    and return this state to `index.js`, which starts a 30-second grace period timer.
+ * 
+ * 3. SEAMLESS RECONNECTION (`reconnect`): If the player refreshes the page or 
+ *    switches WiFi networks, their client reconnects and sends `reconnect-session` 
+ *    with their sessionToken. We verify the token, cancel the deletion, update 
+ *    `socketId`, and mark them `connected: true`. Their score and host privileges 
+ *    are perfectly preserved.
+ * 
+ * 4. HOST MIGRATION (`expireIfStillDisconnected`): If the host drops and never 
+ *    returns after 30 seconds, this function automatically picks the next oldest 
+ *    connected player and promotes them to Host so the room doesn't get bricked.
+ * ------------------------------------------------------------------------- */

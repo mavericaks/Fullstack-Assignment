@@ -166,4 +166,32 @@ class StrokeBuffer {
 
 module.exports = StrokeBuffer;
 
+/* -------------------------------------------------------------------------
+ * 🧑‍🏫 REVIEWER NOTES & CODE WALKTHROUGH
+ * -------------------------------------------------------------------------
+ * This file handles Canvas persistence (Late Joiners, Reconnects, Replays).
+ * 
+ * 1. THE PROBLEM: If we just broadcast `draw-stroke` events to whoever is 
+ *    currently connected, late joiners will stare at a blank canvas until the 
+ *    drawer draws something new.
+ * 
+ * 2. THE SOLUTION: We store every valid stroke in an array (`this.rounds`). 
+ *    When a player joins mid-game, `index.js` fetches `getCurrentStrokes()` 
+ *    and sends the entire history to them. Their client instantly re-renders it.
+ * 
+ * 3. BATCH MERGING (`addSegment`): The drawer's client sends batched points 
+ *    (e.g., `{ id: 's1', seq: 0, points: [...] }`) every 25ms. To save memory, 
+ *    if a stroke with `id: 's1'` already exists in the buffer, we just append 
+ *    the new points to the existing array rather than storing duplicate metadata.
+ * 
+ * 4. UNDO & CLEAR: If the drawer clicks Undo, we pop the last stroke from the 
+ *    array (safely ensuring we don't pop a Clear command). If they click Clear, 
+ *    we inject a `clear-canvas` event into the history, so late joiners don't 
+ *    render all the garbage drawn *before* the clear.
+ * 
+ * 5. MEMORY SAFETY: We cap the history at 3,000 items (`config.canvas.maxHistoryItems`).
+ *    If a malicious user manages to bypass the rate limiter, this hard cap 
+ *    prevents them from crashing the server with massive arrays.
+ * ------------------------------------------------------------------------- */
+
 

@@ -450,3 +450,32 @@ class GameEngine {
 }
 
 module.exports = GameEngine;
+
+/* -------------------------------------------------------------------------
+ * 🧑‍🏫 REVIEWER NOTES & CODE WALKTHROUGH
+ * -------------------------------------------------------------------------
+ * This file is the core State Machine and Authority of the game.
+ * 
+ * 1. SERVER AUTHORITY: Notice how clients never tell the server "The timer is done" 
+ *    or "I guessed the word!". All game timers (pickTimer, hintTimer, round timer) 
+ *    live here. This completely prevents timing exploits and cheating.
+ * 
+ * 2. SECRET WORD SECURITY: In `wordChosen()`, the server stores the `currentWord`. 
+ *    When it broadcasts `round-started` to the lobby, it intentionally sends `null` 
+ *    for the word to all guessers. The secret word never leaves the server until 
+ *    the round ends.
+ * 
+ * 3. HINT SYSTEM: The `timer` loop (running every 1 second) dynamically computes 
+ *    how many letters of the hint to reveal based on the elapsed time. It broadcasts 
+ *    these incremental hints (`hint-update`) to the guessers automatically.
+ * 
+ * 4. GUESS VALIDATION (`handleGuess`): This function intercepts all chat messages. 
+ *    It passes them to `GuessChecker.check()`. If the guess is correct, it calculates 
+ *    a score based on the `elapsed` time (faster guess = more points). If it's a 
+ *    "near-miss" (Levenshtein distance <= 2), it returns `type: 'close'`, allowing 
+ *    `index.js` to send a private warning to the user without broadcasting the typo.
+ * 
+ * 5. EARLY TURN ENDING: `checkAllGuessed()` efficiently checks if all connected 
+ *    guessers have correctly guessed. If so, it short-circuits the timer and ends 
+ *    the round early to keep the game fast-paced.
+ * ------------------------------------------------------------------------- */

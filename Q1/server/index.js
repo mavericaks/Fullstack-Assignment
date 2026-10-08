@@ -663,3 +663,30 @@ server.on('error', (err) => {
 server.listen(PORT, () => {
   console.log(`\n🎨 Pictionary Server running on http://localhost:${PORT}\n`);
 });
+
+
+/* -------------------------------------------------------------------------
+ * 🧑‍🏫 REVIEWER NOTES & CODE WALKTHROUGH
+ * -------------------------------------------------------------------------
+ * This file is the main entry point and WebSocket orchestrator for Drawly.
+ * 
+ * 1. CRASH SAFETY (safeHandler): Node crashes if an uncaught error happens. 
+ *    Every single socket.on callback is wrapped in safeHandler which injects 
+ *    a try/catch block and guarantees the payload is an object. This prevents 
+ *    malicious users from crashing the server by sending null or unexpected types.
+ * 
+ * 2. LIVE SYNCING (draw-stroke): When a drawer moves their mouse, the client 
+ *    batches the coordinates and sends them here. This endpoint validates the 
+ *    colors (HEX_COLOR check), coordinates (clamp to canvas size), and size.
+ *    It instantly broadcasts the valid strokes to the rest of the room. This 
+ *    happens every 25ms to create the illusion of zero-latency live drawing.
+ * 
+ * 3. RATE LIMITING: You'll notice ateLimiter.check(socket.id, 'stroke') 
+ *    and ateLimiter.checkSize(raw, 'stroke') across the chat and stroke handlers. 
+ *    This prevents a hacker from writing a script to spam million-point arrays 
+ *    and OOMing (Out of Memory) the server.
+ * 
+ * 4. LATE JOINERS (sendCurrentRoundState): If someone joins mid-game, they need 
+ *    to see the current drawing immediately. This function grabs the StrokeBuffer 
+ *    from the GameEngine and sends the entire stroke history to just that socket.
+ * ------------------------------------------------------------------------- */

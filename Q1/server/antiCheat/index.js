@@ -129,3 +129,31 @@ class AntiCheatService {
 }
 
 module.exports = AntiCheatService;
+
+/* -------------------------------------------------------------------------
+ * 🧑‍🏫 REVIEWER NOTES & CODE WALKTHROUGH
+ * -------------------------------------------------------------------------
+ * This file is the orchestrator for the OCR Anti-Cheat pipeline.
+ * 
+ * 1. POLLING ARCHITECTURE (`startChecker`): We don't check every single stroke 
+ *    (too CPU intensive). Instead, we use `setInterval` to wake up every 2.5 
+ *    seconds, snapshot the canvas, and inspect it.
+ * 
+ * 2. HEURISTICS FIRST (`heuristic.js`): Before running heavy OCR, we do a quick 
+ *    math check. If the drawer is just drawing a single long line (like a snake), 
+ *    it's obviously not text. Text consists of many small, disconnected strokes. 
+ *    If it doesn't look like text, we abort early to save CPU.
+ * 
+ * 3. RASTERIZATION (`renderer.js`): We can't feed vector points to Tesseract. 
+ *    We must convert the arrays of `{x, y}` coordinates into a literal binary 
+ *    image (Portable Bitmap). We do this in pure Javascript.
+ * 
+ * 4. TESSERACT OCR (`ocrWorker.js`): We spin up a Worker thread running Tesseract.js. 
+ *    If the detected text is very close to the secret word (Levenshtein match) 
+ *    AND the OCR confidence is > 35, we trigger a strike.
+ * 
+ * 5. PENALTIES (`issueStrike`): 
+ *    - Strike 1: Warning, clear canvas.
+ *    - Strike 2: -50 points, clear canvas.
+ *    - Strike 3: Kicked from drawing entirely.
+ * ------------------------------------------------------------------------- */

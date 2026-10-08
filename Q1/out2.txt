@@ -1,0 +1,4 @@
+Γû╢ AntiCheat
+  Γ£û detects thick block letters (2879.2664ms)
+  Γ£û ignores drawings (2061.5747ms)
+Γ£û AntiCheat (4947.5912ms)
